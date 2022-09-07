@@ -1,4 +1,4 @@
-# MODIG
+# MODIG v1.0
 ## MODIG: Integrating Multi-Omics and Multi-Dimensional Gene Network for Cancer Driver Gene Identification based on Graph Attention Network Model
 MODIG is a GAT-based model designed for generating gene repre-sentation from a multi-dimensional gene network for the identifica-tion of cancer driver genes, which mainly performed three steps to integrate multi-omics data and multiple gene associations. 
 
