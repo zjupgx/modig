@@ -17,7 +17,7 @@ Here we provide an implementation of MODIG in Pytorch and PyTorch Geometric. The
 - `utils.py`  functions used in MODIG.
 - `omic_preprocess.py` omics_data processing script of MODIG.
 
-You can download the necessary dataset file from [here](https://doi.org/10.5281/zenodo.7053224), which contains labels for training, omics feature matrix, ppi network, gene association profiles. Please Download the datasets, unzip and put the data folder in the same path as thee modig folder.
+You can download the necessary dataset file from [here](https://doi.org/10.5281/zenodo.7057241), which contains labels for training, omics feature matrix, ppi network, gene association profiles. Please Download the datasets, unzip and put the data folder in the same path as thee modig folder.
 
 ## Requirements
 - Python 3.8
