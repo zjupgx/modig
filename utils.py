@@ -103,7 +103,7 @@ def plot_average_ROC_curve(pred_all, label_all, fig_save_path):
     for i in range(len(pred_all)):
         pred = pred_all[i]
         y_t = label_all[i]
-        tpr, fpr, _ = roc_curve(y_t, pred)
+        fpr, tpr, _ = roc_curve(y_t, pred)
         tprs.append(np.interp(mean_fpr, fpr, tpr))
         tprs[0][0] = 0.0
         auroc = roc_auc_score(y_t, pred)
