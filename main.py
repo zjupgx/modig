@@ -84,9 +84,9 @@ def parse_args():
                         default=0.8,
                         type=float
                         )
-    parser.add_argument('-thr_seq', '--thr_seq', help='the threshold for gene sequence similarity (default: 0.8)',
+    parser.add_argument('-thr_seq', '--thr_seq', help='the threshold for gene sequence similarity (default: 0.5)',
                         dest='thr_seq',
-                        default=0.8,
+                        default=0.5,
                         type=float
                         )
     parser.add_argument('-thr_exp', '--thr_exp', help='the threshold for tissue co-expression pattern (default: 0.8)',
@@ -94,9 +94,9 @@ def parse_args():
                         default=0.8,
                         type=float
                         )
-    parser.add_argument('-thr_path', '--thr_path', help='the threshold of gene pathway co-occurrence (default: 0.6)',
+    parser.add_argument('-thr_path', '--thr_path', help='the threshold of gene pathway co-occurrence (default: 0.5)',
                         dest='thr_path',
-                        default=0.6,
+                        default=0.5,
                         type=float
                         )
     parser.add_argument('-seed', '--seed', help='the random seed (default: 42)',
