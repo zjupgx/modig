@@ -5,7 +5,7 @@
 # @Author    : Zhao-Wenny
 
 import os
-
+import random
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
@@ -13,7 +13,7 @@ from sklearn.metrics import auc, precision_recall_curve, roc_auc_score, roc_curv
 
 
 def seed_torch(seed):
-    # random.seed(seed)
+    random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -25,21 +25,10 @@ def seed_torch(seed):
 
 
 def plot_average_PR_curve(pred_all, label_all, fig_save_path):
-    """Computes the average PR curve across the different cross validation runs.
-
-    This function uses the results from compute_ensemble_predictions and plots
-    a ROC curve from that information. The curve depicts also confidence
-    intervalls and the average curve as well as AUPR values.
-
-    Parameters:
-    ----------
-    model_dir:                  The output directory of the GCN training
-    pred_all:                   A list with the predictions for all folds
-                                (First return value of compute_ensemble_predictions)
-    label_all:                   The different test sets for all folds as list
-                                (Second return value of compute_ensemble_predictions)
-    """
-    fig = plt.figure(figsize=(20, 12))
+    """绘制平均PR曲线及其标准差区间"""
+    # 创建图表，设置更大的边距
+    plt.figure(figsize=(20, 12))
+    plt.subplots_adjust(right=0.85)  # 为图例留出空间
 
     y_true = []
     y_pred = []
@@ -47,6 +36,7 @@ def plot_average_PR_curve(pred_all, label_all, fig_save_path):
     rec_values = []
 
     sample_thresholds = np.linspace(0, 1, 100)
+    # 绘制每个fold的PR曲线
     for i in range(len(pred_all)):
         pred = pred_all[i]
         y_t = label_all[i]
@@ -54,24 +44,26 @@ def plot_average_PR_curve(pred_all, label_all, fig_save_path):
         pr_values.append(np.interp(sample_thresholds, thr, pr[:-1]))
         rec_values.append(np.interp(sample_thresholds, thr, rec[:-1]))
         aupr = auc(rec, pr)
-        plt.plot(rec, pr, lw=4, alpha=0.4,
-                 label='Fold %d (AUPR = %0.2f)' % (i, aupr))
+        plt.plot(rec, pr, lw=2, alpha=0.3,
+                label=f'Fold {i} (AUPR = {aupr:.2f})')
 
         y_true.append(y_t)
         y_pred.append(pred)
 
+    # 计算并绘制平均PR曲线
     y_true = np.concatenate(y_true)
     y_pred = np.concatenate(y_pred)
-    mean_precision, mean_recall, _ = precision_recall_curve(
-        y_true, y_pred)
-
+    mean_precision, mean_recall, _ = precision_recall_curve(y_true, y_pred)
     mean_aupr = auc(mean_recall, mean_precision)
 
-    label = f'Mean PR (AUPR={mean_aupr:.2f})'
-    plt.plot(mean_recall, mean_precision, alpha=.8,
-             label=label, linestyle='--', lw=6, color='darkred')
+    plt.plot(mean_recall, mean_precision, 
+            color='darkred',
+            label=f'Mean PR (AUPR={mean_aupr:.2f})',
+            linestyle='--', 
+            lw=3, 
+            alpha=0.8)
 
-    # plot std dev
+    # 绘制标准差区间
     std_pr = np.std(pr_values, axis=0)
     mean_pr = np.mean(pr_values, axis=0)
     mean_rec = np.mean(rec_values, axis=0)
@@ -81,62 +73,109 @@ def plot_average_PR_curve(pred_all, label_all, fig_save_path):
     pr_lower = np.append(pr_lower, 1.)
     mean_rec = np.append(mean_rec, 0.)
 
-    plt.fill_between(mean_rec, pr_lower, pr_upper, color='grey', alpha=.2,
-                     label=r'$\pm$ 1 std. dev.')
+    plt.fill_between(mean_rec, pr_lower, pr_upper, 
+                    color='grey', 
+                    alpha=0.2,
+                    label=r'$\pm$ 1 std. dev.')
 
-    plt.tick_params(axis='both', labelsize=20)
-    plt.xlabel('Recall', fontsize=25)
-    plt.ylabel('Precision', fontsize=25)
-    plt.legend(prop={'size': 20})
-    fig.savefig(os.path.join(fig_save_path, 'mean_PR_curve.svg'), dpi=300)
-    plt.close(fig=fig)
+    # 设置图表样式
+    plt.grid(True, alpha=0.3)
+    plt.tick_params(axis='both', labelsize=12)
+    plt.xlabel('Recall', fontsize=14)
+    plt.ylabel('Precision', fontsize=14)
+    
+    # 优化图例位置和样式
+    plt.legend(bbox_to_anchor=(1.05, 1), 
+              loc='upper left', 
+              fontsize=10, 
+              frameon=True,
+              fancybox=True, 
+              shadow=True)
+    
+    # 保存图表
+    plt.tight_layout()  # 自动调整布局
+    plt.savefig(os.path.join(fig_save_path, 'mean_PR_curve.svg'), 
+                dpi=300, 
+                bbox_inches='tight')
+    plt.close()
 
 
 def plot_average_ROC_curve(pred_all, label_all, fig_save_path):
-
-    fig = plt.figure(figsize=(20, 12))
+    """绘制平均ROC曲线及其标准差区间"""
+    # 创建图表，设置更大的边距
+    plt.figure(figsize=(20, 12))
+    plt.subplots_adjust(right=0.85)  # 为图例留出空间
 
     tprs = []
     aucs = []
-
     mean_fpr = np.linspace(0, 1, 100)
+
+    # 绘制每个fold的ROC曲线
     for i in range(len(pred_all)):
         pred = pred_all[i]
         y_t = label_all[i]
         fpr, tpr, _ = roc_curve(y_t, pred)
         tprs.append(np.interp(mean_fpr, fpr, tpr))
-        tprs[0][0] = 0.0
+        tprs[-1][0] = 0.0
         auroc = roc_auc_score(y_t, pred)
         aucs.append(auroc)
-        plt.plot(fpr, tpr, lw=4, alpha=0.3,
-                 label='Fold %d (AUROC = %0.2f)' % (i, auroc))
+        plt.plot(fpr, tpr, lw=2, alpha=0.3,
+                label=f'Fold {i} (AUROC = {auroc:.2f})')
 
+    # 计算并绘制平均ROC曲线
     mean_tpr = np.mean(tprs, axis=0)
-    mean_tpr[0] = 0
+    mean_tpr[-1] = 1.0
     mean_auc = auc(mean_fpr, mean_tpr)
     std_auc = np.std(aucs)
 
-    plt.plot(mean_fpr, mean_tpr, color='navy',
-             label=r'Mean ROC curve(AUC = %0.2f $\pm$ %0.2f)' % (
-                 mean_auc, std_auc),
-             lw=6, alpha=.8)
+    plt.plot(mean_fpr, mean_tpr, 
+            color='navy',
+            label=f'Mean ROC (AUC = {mean_auc:.2f} ± {std_auc:.2f})',
+            linestyle='--', 
+            lw=3, 
+            alpha=0.8)
 
+    # 绘制标准差区间
     std_tpr = np.std(tprs, axis=0)
     tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
     tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
-    plt.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2,
-                     label=r'$\pm$ 1 std. dev.')
+    plt.fill_between(mean_fpr, tprs_lower, tprs_upper, 
+                    color='grey', 
+                    alpha=0.2,
+                    label=r'$\pm$ 1 std. dev.')
 
+    # 设置图表样式
+    plt.grid(True, alpha=0.3)
+    plt.tick_params(axis='both', labelsize=12)
+    plt.xlabel('False Positive Rate', fontsize=14)
+    plt.ylabel('True Positive Rate', fontsize=14)
+    
+    # 添加对角线
+    plt.plot([0, 1], [0, 1], 
+            linestyle='--', 
+            lw=2, 
+            color='gray', 
+            alpha=.8,
+            label='Random')
+
+    # 设置坐标轴范围
     plt.xlim([-0.05, 1.05])
     plt.ylim([-0.05, 1.05])
-    plt.xlabel('False Positive Rate', fontsize=25)
-    plt.ylabel('True Positive Rate', fontsize=25)
 
-    plt.legend(loc="lower right", prop={'size': 20})
-    plt.tick_params(axis='both', labelsize=20)
-    fig.savefig(os.path.join(fig_save_path, 'mean_ROC_curve.svg'), dpi=300)
-    plt.close(fig=fig)
+    # 优化图例位置和样式
+    plt.legend(bbox_to_anchor=(1.05, 1), 
+              loc='upper left', 
+              fontsize=10,
+              frameon=True,
+              fancybox=True, 
+              shadow=True)
 
+    # 保存图表
+    plt.tight_layout()  # 自动调整布局
+    plt.savefig(os.path.join(fig_save_path, 'mean_ROC_curve.svg'), 
+                dpi=300, 
+                bbox_inches='tight')
+    plt.close()
 
 class EarlyStopping:
     """Early stops the training if validation loss doesn't improve after a given patience."""
